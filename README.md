@@ -1,0 +1,1 @@
+USB Full speed Mass storage device for Chibios 16.x.x demo
