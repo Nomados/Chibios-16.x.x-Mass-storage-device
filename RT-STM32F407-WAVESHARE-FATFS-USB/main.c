@@ -19,10 +19,8 @@
 
 #include "ch.h"
 #include "hal.h"
-#include "ch_test.h"
 
 #include "chprintf.h"
-#include "shell.h"
 
 #include "usb_msd.h"
 #include "ff.h"
@@ -41,11 +39,8 @@ static FATFS SDC_FS;
 /* FS mounted and ready.*/
 static bool fs_ready = FALSE;
 
-#define RED_ON palClearPad(GPIOF, GPIOF_PIN8);
-
-
-
-
+#define RED_ON palSetPad(GPIOF, GPIOF_PIN8);
+void debug_print_str(char * string);
 
 
 /*
@@ -56,11 +51,97 @@ static THD_FUNCTION(Thread1, arg) {
 
   (void)arg;
   chRegSetThreadName("blinker");
-  while (true) {
+  while (true)
+  {
     palTogglePad(GPIOF, GPIOF_PIN9);
     chThdSleepMilliseconds(fs_ready ? 125 : 500);
   }
 }
+
+
+THD_WORKING_AREA(dbg_wa, 512);
+THD_FUNCTION(dbg, arg)
+{
+  (void) arg;
+  chRegSetThreadName("dbg_printer");
+
+  while (true)
+  {
+    eventmask_t events = chEvtWaitAny
+        (
+                EVT_USB_RESET        |
+                EVT_BOT_RESET        |
+                EVT_SEM_TAKEN        |
+                EVT_SEM_RELEASED     |
+                EVT_USB_CONFIGURED   |
+                EVT_SCSI_REQ_READ_FMT_CAP |
+                EVT_SCSI_REQ_TEST_UNIT_READY |
+                EVT_SCSI_REQ_SENSE6 |
+                EVT_SCSI_REQ_SENSE10 |
+                EVT_WAIT_FOR_COMMAND_BLOCK |
+                EVT_SCSI_REQ_SEND_DIAGNOSTIC |
+                EVT_SCSI_REQ_READ_CAP10 |
+                EVT_SCSI_PROC_INQ
+                );
+
+
+    if (events & EVT_USB_RESET)
+    {
+      debug_print_str("Standard USB Reset issued");
+    }
+
+    if (events & EVT_BOT_RESET)
+    {
+      debug_print_str("BOT Reset issued");
+    }
+
+    if (events & EVT_SEM_TAKEN)
+    {
+      debug_print_str("Semaphore was taken");
+    }
+    if (events & EVT_SEM_RELEASED)
+    {
+      debug_print_str("Semaphore was released");
+    }
+    if (events & EVT_USB_CONFIGURED)
+    {
+      debug_print_str("USB was confugured");
+    }
+    if (events & EVT_SCSI_REQ_TEST_UNIT_READY)
+    {
+      debug_print_str("SCSI_REQ_TEST_UNIT_READY");
+    }
+    if (events & EVT_SCSI_REQ_READ_FMT_CAP)
+    {
+      debug_print_str("SCSI_REQ_READ_FMT_CAP");
+    }
+    if (events & EVT_SCSI_REQ_SENSE6)
+    {
+      debug_print_str("SCSI_REQ_SENSE6");
+    }
+    if (events & EVT_WAIT_FOR_COMMAND_BLOCK)
+    {
+      debug_print_str("WAIT_FOR_COMMAND_BLOCK");
+    }
+    if (events & EVT_SCSI_REQ_SENSE10)
+    {
+      debug_print_str("SCSI_REQ_SENSE10");
+    }
+    if (events & EVT_SCSI_REQ_SEND_DIAGNOSTIC)
+    {
+      debug_print_str("SCSI_REQ_SEND_DIAGNOSTIC");
+    }
+    if (events & EVT_SCSI_REQ_READ_CAP10)
+    {
+      debug_print_str("SCSI_REQ_READ_CAP10");
+    }
+    if (events & EVT_SCSI_PROC_INQ)
+    {
+      debug_print_str("SCSI_PROC_INQ");
+    }
+  }
+}
+
 
 uint8_t mmc_scrachpad[512];
 SDCConfig cfg =
@@ -69,8 +150,76 @@ SDCConfig cfg =
  SDC_MODE_4BIT
 };
 
+
 /*
- * Application entry point.
+ * FS thread
+ */
+static THD_WORKING_AREA(waThreadFS, 512);
+static THD_FUNCTION(ThreadFS, arg)
+{
+
+  (void)arg;
+  chRegSetThreadName("FS");
+  chThdSleepMilliseconds(550);
+
+
+  /*
+   * SD card insertion monitor.
+   */
+  sdcStart(&SDCD1, &cfg);
+  if (sdcConnect(&SDCD1) == HAL_FAILED)
+  {
+    RED_ON;
+    debug_print_str("Can not initialize SD card");
+  };
+
+  FRESULT err = f_mount(&SDC_FS, "/", 1);
+  if (err != FR_OK)
+  {
+    RED_ON;
+    fs_ready = FALSE;
+    debug_print_str("Can not mount SD card filesystem");
+  }
+  else
+  {
+    fs_ready = true;
+    debug_print_str("Here we go!");
+  }
+
+  init_msd_driver(arg);
+
+  while (true)
+  {
+    chThdSleepMilliseconds(500);
+  }
+}
+
+
+
+
+/*
+ * Serial driver configuration structure.
+ */
+static SerialConfig sercfg1 =
+{
+ 19200,
+ 0,
+ 0,//USART_CR2_LINEN,
+ 0
+};
+
+BaseSequentialStream * chp;
+
+
+void debug_print_str(char * string)
+{
+  chprintf(chp, "%s\n\r", string);
+}
+
+static thread_t * prn;
+
+/*
+ *  * Application entry point.
  */
 int main(void)
 {
@@ -81,7 +230,6 @@ int main(void)
    *   and performs the board-specific initializations.
    * - Kernel initialization, the main() function becomes a thread and the
    *   RTOS is active.
-   * - lwIP subsystem initialization using the default configuration.
    */
   halInit();
   chSysInit();
@@ -90,35 +238,25 @@ int main(void)
    * Activates the serial driver 6 and SDC driver 1 using default
    * configuration.
    */
-  sdStart(&SD6, NULL);
+  sdStart(&SD1, &sercfg1);
+
+  chp = (BaseSequentialStream *)&SD1;
+
   /*
-   * SD card insertion monitor.
+   * Creates debug printer thread.
    */
-
-  sdcStart(&SDCD1, &cfg);
-  if (sdcConnect(&SDCD1) == HAL_FAILED)
-  {
-    RED_ON;
-  };
-
-  FRESULT err = f_mount(&SDC_FS, "/", 1);
-  if (err != FR_OK)
-  {
-    RED_ON;
-    fs_ready = FALSE;
-  }
-  else
-  {
-    fs_ready = true;
-  }
+  prn = chThdCreateStatic(dbg_wa, sizeof(dbg_wa), NORMALPRIO - 1, dbg, NULL);
 
   /*
    * Creates the blinker thread.
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
+  /*
+   * Creates the FS thread.
+   */
+  chThdCreateStatic(waThreadFS, sizeof(waThreadFS), NORMALPRIO + 1, ThreadFS, prn);
 
-  init_msd_driver();
 
 
   /*
@@ -128,8 +266,6 @@ int main(void)
 
   while (true)
   {
-
     chThdSleepMilliseconds(500);
-
   }
 }

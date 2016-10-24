@@ -4,13 +4,16 @@
 
 ** TARGET **
 
-The demo runs on an Waveshare Open 207Z-407Z board.
+The demo runs on an Olimex STM32-E407 board.
 
 ** The Demo **
 
-The demo currently just flashes a LED using a thread and uses
- USB-FS port is used as USB-MSD (mass storage device).
-You need to insert SD card to make to work
+The demo currently just flashes a LED using a thread and serves HTTP requests
+at address 192.168.1.10 on port 80.
+FatFs integrated using SDIO.
+The USB-FS port is used as USB-CDC and a command shell is ready to accepts
+commands there.
+
 ** Build Procedure **
 
 The demo has been tested by using the free Codesourcery GCC-based toolchain

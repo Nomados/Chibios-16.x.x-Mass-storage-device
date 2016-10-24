@@ -13,19 +13,30 @@
 #define PACK_STRUCT_STRUCT __attribute__((packed))
 #define PACK_STRUCT_BEGIN
 #define PACK_STRUCT_END
-#define CH_FAILED HAL_FAILED
-#define bool_t bool
-#define chEvtInit chEvtObjectInit
-#define BinarySemaphore binary_semaphore_t
-#define EventSource event_source_t
-#define Thread thread_t
-#define chBSemInit chBSemObjectInit
 
-#define msg_t
+
+
 
 #define USBD USBD1
 #define USB_BUS_ACTIVE palSetPad(GPIOF, GPIOF_PIN6)
 #define USB_BUS_IDLE   palClearPad(GPIOF, GPIOF_PIN6)
+
+#define SEM_TAKEN       palSetPad(GPIOF, GPIOF_PIN7)
+#define SEM_RELEASED    palClearPad(GPIOF, GPIOF_PIN7)
+
+#define         EVT_USB_RESET                           (1 << 0)
+#define         EVT_BOT_RESET                           (1 << 1)
+#define         EVT_SEM_TAKEN                           (1 << 2)
+#define         EVT_SEM_RELEASED                        (1 << 3)
+#define         EVT_USB_CONFIGURED                      (1 << 4)
+#define         EVT_SCSI_REQ_TEST_UNIT_READY            (1 << 5)
+#define         EVT_SCSI_REQ_READ_FMT_CAP               (1 << 6)
+#define         EVT_SCSI_REQ_SENSE6                     (1 << 7)
+#define         EVT_SCSI_REQ_SENSE10                    (1 << 8)
+#define         EVT_WAIT_FOR_COMMAND_BLOCK              (1 << 9)
+#define         EVT_SCSI_REQ_SEND_DIAGNOSTIC            (1 << 10)
+#define         EVT_SCSI_REQ_READ_CAP10                 (1 << 11)
+#define         EVT_SCSI_PROC_INQ                       (1 << 12)
 
 /**
  * @brief Command Block Wrapper structure
@@ -81,7 +92,8 @@ PACK_STRUCT_BEGIN typedef struct
 typedef enum {
     MSD_IDLE,
     MSD_READ_COMMAND_BLOCK,
-    MSD_EJECTED
+    MSD_EJECTED,
+    MSD_BOT_RESET
 } msd_state_t;
 
 /**
@@ -106,10 +118,10 @@ typedef struct {
     /**
     * @brief Optional callback that will be called whenever there is
     *        read/write activity
-    * @note  The callback is called with argument TRUE when activity starts,
-    *        and FALSE when activity stops.
+    * @note  The callback is called with argument true when activity starts,
+    *        and false when activity stops.
     */
-    void (*rw_activity_callback)(bool_t);
+    void (*rw_activity_callback)(bool);
 
     /**
     * @brief Short vendor identification
@@ -138,16 +150,18 @@ typedef struct {
  */
 typedef struct {
     const USBMassStorageConfig* config;
-	BinarySemaphore bsem;
-    Thread* thread;
-	EventSource evt_connected, evt_ejected;
+    binary_semaphore_t bsem;
+    thread_t* thread;
+    event_source_t evt_connected, evt_ejected;
 	BlockDeviceInfo block_dev_info;
 	msd_state_t state;
 	msd_cbw_t cbw;
 	msd_csw_t csw;
 	msd_scsi_sense_response_t sense;
 	msd_scsi_inquiry_response_t inquiry;
-	bool_t result;
+	bool reconfigured_or_reset_event;
+	bool result;
+	bool bot_reset;
 } USBMassStorageDriver;
 
 #ifdef __cplusplus
@@ -195,15 +209,16 @@ void msdConfigureHookI(USBMassStorageDriver *msdp);
  *
  * @param[in] usbp      pointer to the @p USBDriver object
  * @return              The hook status.
- * @retval TRUE         Message handled internally.
- * @retval FALSE        Message not handled.
+ * @retval true         Message handled internally.
+ * @retval false        Message not handled.
  */
-bool_t msdRequestsHook(USBDriver *usbp);
+bool msdRequestsHook(USBDriver *usbp);
 
 
-void init_msd_driver(void);
+void init_msd_driver(void * p);
 void deinit_msd_driver(void);
 
+extern void debug_print_str(char * string);
 
 #ifdef __cplusplus
 }

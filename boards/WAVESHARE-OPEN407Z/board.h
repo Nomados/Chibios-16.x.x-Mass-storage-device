@@ -84,8 +84,8 @@
 #define GPIOB_SWO                   3 // SEMIHOSTING>
 #define GPIOB_SD_INDICATE           4
 #define GPIOB_USB_OTG_HS_D7         5
-#define GPIOB_I2C1_SCL              6
-#define GPIOB_I2C1_SDA              7
+#define GPIOB_UART1_TX              6
+#define GPIOB_UART1_RX              7
 #define GPIOB_I2C_ENABLE            8
 #define GPIOB_I2C_INDICATE          9
 #define GPIOB_USB_OTG_HS_D3         10
@@ -180,7 +180,7 @@
 #define GPIOG_PIN14                 14
 #define GPIOG_PIN15                 15
 
-/* external quartz 24MHz */
+/* external quartz 8MHz */
 #define GPIOH_OSC_IN                0
 #define GPIOH_OSC_OUT               1
 #define GPIOH_PIN2                  2
@@ -250,7 +250,7 @@
                                      PIN_MODE_OUTPUT(GPIOA_BT_RESET) |           \
                                      PIN_MODE_OUTPUT(GPIOA_BT_AUTORUN) |\
                                      PIN_MODE_OUTPUT(GPIOA_8) |  \
-                                     PIN_MODE_INPUT(GPIOA_OTG_FS_VBUS) |    \
+                                     PIN_MODE_ALTERNATE(GPIOA_OTG_FS_VBUS) |    \
                                      PIN_MODE_ALTERNATE(GPIOA_PIN10) |  \
                                      PIN_MODE_ALTERNATE(GPIOA_OTG_FS_DM) |  \
                                      PIN_MODE_ALTERNATE(GPIOA_OTG_FS_DP) |  \
@@ -330,7 +330,7 @@
                                      PIN_AFIO_AF(GPIOA_BT_RESET, 0) |           \
                                      PIN_AFIO_AF(GPIOA_BT_AUTORUN, 0))
 #define VAL_GPIOA_AFRH              (PIN_AFIO_AF(GPIOA_8, 0) |   \
-                                     PIN_AFIO_AF(GPIOA_OTG_FS_VBUS, 0) |    \
+                                     PIN_AFIO_AF(GPIOA_OTG_FS_VBUS, 10) |    \
                                      PIN_AFIO_AF(GPIOA_PIN10, 10) |     \
                                      PIN_AFIO_AF(GPIOA_OTG_FS_DM, 10) |     \
                                      PIN_AFIO_AF(GPIOA_OTG_FS_DP, 10) |     \
@@ -347,8 +347,8 @@
                                      PIN_MODE_ALTERNATE(GPIOB_SWO) |   \
                                      PIN_MODE_OUTPUT(GPIOB_SD_INDICATE) |  \
                                      PIN_MODE_ALTERNATE(GPIOB_USB_OTG_HS_D7) |           \
-                                     PIN_MODE_INPUT(GPIOB_I2C1_SCL) |           \
-                                     PIN_MODE_INPUT(GPIOB_I2C1_SDA) |           \
+                                     PIN_MODE_ALTERNATE(GPIOB_UART1_TX) |           \
+                                     PIN_MODE_ALTERNATE(GPIOB_UART1_RX) |           \
                                      PIN_MODE_OUTPUT(GPIOB_I2C_ENABLE) |   \
                                      PIN_MODE_OUTPUT(GPIOB_I2C_INDICATE) |   \
                                      PIN_MODE_ALTERNATE(GPIOB_USB_OTG_HS_D3) |   \
@@ -363,8 +363,8 @@
                                      PIN_OTYPE_PUSHPULL(GPIOB_SWO) |   \
                                      PIN_OTYPE_PUSHPULL(GPIOB_SD_INDICATE) |  \
                                      PIN_OTYPE_PUSHPULL(GPIOB_USB_OTG_HS_D7) |       \
-                                     PIN_OTYPE_PUSHPULL(GPIOB_I2C1_SCL) |       \
-                                     PIN_OTYPE_PUSHPULL(GPIOB_I2C1_SDA) |       \
+                                     PIN_OTYPE_PUSHPULL(GPIOB_UART1_TX) |       \
+                                     PIN_OTYPE_PUSHPULL(GPIOB_UART1_RX) |       \
                                      PIN_OTYPE_PUSHPULL(GPIOB_I2C_ENABLE) |  \
                                      PIN_OTYPE_OPENDRAIN(GPIOB_I2C_INDICATE) |  \
                                      PIN_OTYPE_PUSHPULL(GPIOB_USB_OTG_HS_D3) |   \
@@ -379,8 +379,8 @@
                                      PIN_OSPEED_100M(GPIOB_SWO) |      \
                                      PIN_OSPEED_100M(GPIOB_SD_INDICATE) |     \
                                      PIN_OSPEED_100M(GPIOB_USB_OTG_HS_D7) |          \
-                                     PIN_OSPEED_100M(GPIOB_I2C1_SCL) |          \
-                                     PIN_OSPEED_100M(GPIOB_I2C1_SDA) |          \
+                                     PIN_OSPEED_100M(GPIOB_UART1_TX) |          \
+                                     PIN_OSPEED_100M(GPIOB_UART1_RX) |          \
                                      PIN_OSPEED_100M(GPIOB_I2C_ENABLE) |      \
                                      PIN_OSPEED_100M(GPIOB_I2C_INDICATE) |      \
                                      PIN_OSPEED_100M(GPIOB_USB_OTG_HS_D3) |      \
@@ -395,8 +395,8 @@
                                      PIN_PUPDR_FLOATING(GPIOB_SWO) |   \
                                      PIN_PUPDR_FLOATING(GPIOB_SD_INDICATE) |  \
                                      PIN_PUPDR_PULLUP(GPIOB_USB_OTG_HS_D7) |         \
-                                     PIN_PUPDR_PULLUP(GPIOB_I2C1_SCL) |         \
-                                     PIN_PUPDR_PULLUP(GPIOB_I2C1_SDA) |         \
+                                     PIN_PUPDR_PULLUP(GPIOB_UART1_TX) |         \
+                                     PIN_PUPDR_PULLUP(GPIOB_UART1_RX) |         \
                                      PIN_PUPDR_FLOATING(GPIOB_I2C_ENABLE) |   \
                                      PIN_PUPDR_FLOATING(GPIOB_I2C_INDICATE) |   \
                                      PIN_PUPDR_FLOATING(GPIOB_USB_OTG_HS_D3) |   \
@@ -411,8 +411,8 @@
                                      PIN_ODR_HIGH(GPIOB_SWO) |         \
                                      PIN_ODR_HIGH(GPIOB_SD_INDICATE) |        \
                                      PIN_ODR_HIGH(GPIOB_USB_OTG_HS_D7) |             \
-                                     PIN_ODR_HIGH(GPIOB_I2C1_SCL) |             \
-                                     PIN_ODR_HIGH(GPIOB_I2C1_SDA) |             \
+                                     PIN_ODR_HIGH(GPIOB_UART1_TX) |             \
+                                     PIN_ODR_HIGH(GPIOB_UART1_RX) |             \
                                      PIN_ODR_HIGH(GPIOB_I2C_ENABLE) |         \
                                      PIN_ODR_HIGH(GPIOB_I2C_INDICATE) |         \
                                      PIN_ODR_HIGH(GPIOB_USB_OTG_HS_D3) |         \
@@ -427,8 +427,8 @@
                                      PIN_AFIO_AF(GPIOB_SWO, 0) |       \
                                      PIN_AFIO_AF(GPIOB_SD_INDICATE, 0) |      \
                                      PIN_AFIO_AF(GPIOB_USB_OTG_HS_D7, 10) |           \
-                                     PIN_AFIO_AF(GPIOB_I2C1_SCL, 0) |           \
-                                     PIN_AFIO_AF(GPIOB_I2C1_SDA, 0))
+                                     PIN_AFIO_AF(GPIOB_UART1_TX, 7) |           \
+                                     PIN_AFIO_AF(GPIOB_UART1_RX, 7))
 #define VAL_GPIOB_AFRH              (PIN_AFIO_AF(GPIOB_I2C_ENABLE, 0) |       \
                                      PIN_AFIO_AF(GPIOB_I2C_INDICATE, 0) |       \
                                      PIN_AFIO_AF(GPIOB_USB_OTG_HS_D3, 10) |       \
